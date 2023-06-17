@@ -1,6 +1,14 @@
 from board import Board
 import minimax
 
+# Game mode
+gameMode = int(
+    input("Choose game mode\n1. Player vs Player\n2. Player vs Computer\n"))
+if (gameMode == 2):
+    turnMessage = "Computer turn"
+else:
+    turnMessage = "Player 2 turn"
+
 # Human turn
 def humanChoice(board):
     # Pick slot/column
@@ -16,7 +24,7 @@ def humanChoice(board):
 
 # Controller for the turn
 def choice(player, board, depth, letter):
-    if player == 1:
+    if player == 1 or gameMode == 1:
         return humanChoice(board)
     else:
         boardArray = board.getArray()
@@ -36,7 +44,7 @@ while turns < 50:
         break
     turns += 1
     gameBoard.showBoard()
-    print("Computer turn")
+    print(turnMessage)
     gameBoard.dropLetter(choice(2, gameBoard, depth, "O"), "O")
     if gameBoard.detectWin() != " ":
         break
@@ -47,4 +55,9 @@ gameBoard.showBoard()
 if turns == 50:
     print("Draw!\n")
 else:
-    print("Player " + gameBoard.detectWin() + " Win!\n")
+    if gameBoard.detectWin() == "X":
+        print("Player 1 Win!\n")
+    elif gameMode == 1:
+        print("Player 2 Win!\n")
+    else:
+        print("Computer Win!\n")
