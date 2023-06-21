@@ -1,4 +1,10 @@
 class Board(object):
+    def __init__(self):
+        # Matrix for storing letters, initialize as instance variable
+        self.positions = []
+        for x in range(7):
+            self.positions.append([" " for y in range(6)])
+
     # Matrix for store letter
     positions = []
     for x in range(7):
@@ -69,3 +75,8 @@ class Board(object):
                 if self.positions[x][y] != " " and self.positions[x][y] == self.positions[x-1][y+1] == self.positions[x - 2][y + 2] == self.positions[x - 3][y + 3]:
                     return self.positions[x][y]
         return " "
+
+    def clear_board(self):
+        for x in range(7):
+            for y in range(6):
+                self.positions[x][y] = " "

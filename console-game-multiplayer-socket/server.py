@@ -143,6 +143,7 @@ while True:
 
     if player_num == 2:
         game = Board()
+        game_over = False
         broadcast("Game starts!\n")
 
     threading.Thread(target=client_thread, args=(conn,)).start()
