@@ -1,6 +1,8 @@
 import socket
 import sys
 import threading
+import time
+import select
 
 # region variable
 terminal_width = 50
@@ -54,65 +56,86 @@ connection_closed = False
 
 
 def send_msg(sock):
-    global connection_closed
-    while True:
+    global continue_sending
+    while continue_sending:
         move = input("Enter your move (1-7) or 'q' to quit: ")
-        if move == 'q':
-            sock.send('quit'.encode())
+
+        if not continue_sending:
             break
+
+        if move == 'q':
+            try:
+                sock.send('quit'.encode())
+            except OSError:
+                break
+            continue_sending = False
+            break
+
         while not move.isdigit() or not 1 <= int(move) <= 7:
             print("Error: Invalid move. Please enter a number between 1 and 7.")
             move = input("Enter your move (1-7): ")
-        message = f"move:{move}"
-        sock.send(message.encode())
 
-    connection_closed = True
-    sock.close()
+        message = f"move:{move}"
+        try:
+            sock.send(message.encode())
+        except OSError:
+            break
 
 
 def recv_msg(sock):
-    global game_mode, connection_closed
+    global game_mode, continue_sending
     while True:
-        if connection_closed:
-            break
-
         data = sock.recv(2048)
         if not data:
             print("Connection closed by the server.")
+            continue_sending = False
             sock.close()
             break
         message = data.decode()
         sys.stdout.write("\n" + message + "\n")
         if "Game over" in message:
-            connection_closed = True
+            continue_sending = False
             sock.close()
             game_mode = 0
+
 # endregion
 
 
 # region main program
 print_welcome_message()
 
-while selected_menu != 1 and selected_menu != 2:
-    print_main_menu()
-    selected_menu = int(input('Please select menu: '))
-    if selected_menu == 1:
-        print_choose_game_mode()
-        while game_mode != 3:
-            game_mode = int(input('Please select game mode: '))
-            if game_mode == 3:
-                server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                ip_address = '127.0.0.1'
-                port = 8081
-                server.connect((ip_address, port))
+while True:
+    selected_menu = 0
+    game_mode = 0
 
-                threading.Thread(target=send_msg, args=(server,)).start()
-                threading.Thread(target=recv_msg, args=(server,)).start()
-                break
-        break
-    elif selected_menu == 2:
-        print('exit.')
-        sys.exit()
-    else:
-        print('Error: wrong input (1 / 2), please try again.')
+    while selected_menu != 1 and selected_menu != 2:
+        print_main_menu()
+        selected_menu = int(input('Please select menu: '))
+
+        if selected_menu == 1:
+            print_choose_game_mode()
+            while game_mode != 3:
+                game_mode = int(input('Please select game mode: '))
+                if game_mode == 3:
+                    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    ip_address = '127.0.0.1'
+                    port = 8081
+                    server.connect((ip_address, port))
+                    continue_sending = True
+                    threading.Thread(target=send_msg, args=(server,)).start()
+                    threading.Thread(target=recv_msg, args=(server,)).start()
+
+                    while game_mode != 0:
+                        time.sleep(1)
+
+                    if sys.stdin in select.select([sys.stdin], [], [], 0.1)[0]:
+                        sys.stdin.readline()
+
+                    break
+        elif selected_menu == 2:
+            print('exit.')
+            sys.exit()
+        else:
+            print('Error: wrong input (1 / 2), please try again.')
 # endregion
+
