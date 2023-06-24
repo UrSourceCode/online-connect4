@@ -1,4 +1,3 @@
-import numpy as np
 import pygame
 import math
 
@@ -15,43 +14,25 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
 
-background_color = (0, 255, 255)
-border_color = (255, 255, 255)
-text_color = (0, 0, 0)
-title_text = "Online Connect-4"
-
 gameMode = int(input("Choose game mode\n1. Player vs Player\n2. Player vs Computer\n"))
 # gameMode = 1
-if (gameMode == 2):
+if gameMode == 2:
     turnMessage = "Computer turn"
 else:
     turnMessage = "Player 2 turn"
 
+
 class Game:
     def __init__(self, tile_size):
         self.tile_size = tile_size
-        # self.board_width = BOARD_WIDTH
-        # self.board_height = BOARD_HEIGHT
-        # self.board = np.zeros((self.board_height, self.board_width))
-        # self.window_width = WINDOW_SIZE
-        # self.window_height = WINDOW_SIZE
-        # self.border_color = border_color
 
     def init_pygame(self):
         pygame.init()
-
-        # define width and height of board
         self.width = BOARD_WIDTH * self.tile_size
-        self.height = (BOARD_HEIGHT+1) * self.tile_size
-
+        self.height = (BOARD_HEIGHT + 1) * self.tile_size
         self.size = (self.width, self.height)
         self.screen = pygame.display.set_mode(self.size)
-
-        self.RADIUS = int(self.tile_size/2 - 5)
-
-        # pygame.display.set_caption("Online Connect4")
-        # self.title_font = pygame.font.Font(None, 48)
-
+        self.RADIUS = int(self.tile_size / 2 - 5)
         pygame.display.update()
         self.textFont = pygame.font.SysFont("Helvetica", 48, bold=True)
 
@@ -65,7 +46,6 @@ class Game:
             else:
                 print("Slot is full")
 
-    # Controller for the turn
     def choice(self, player, board, depth, letter, slot=0):
         if gameMode == 1 or player == 1:
             return self.humanChoice(board, slot)
@@ -79,24 +59,29 @@ class Game:
         for c in range(BOARD_HEIGHT):
             for r in range(BOARD_WIDTH):
                 pygame.draw.rect(self.screen, BLUE, (
-                    r*self.tile_size, c * self.tile_size+self.tile_size, self.tile_size, self.tile_size))
+                    r * self.tile_size, c * self.tile_size + self.tile_size, self.tile_size, self.tile_size))
                 pygame.draw.circle(self.screen, BLACK, (int(
-                    r*self.tile_size+self.tile_size/2), int(c*self.tile_size+self.tile_size+self.tile_size/2)), self.RADIUS)
+                    r * self.tile_size + self.tile_size / 2),
+                                                        int(c * self.tile_size + self.tile_size + self.tile_size / 2)),
+                                   self.RADIUS)
 
         for c in range(BOARD_HEIGHT):
             for r in range(BOARD_WIDTH):
                 if board[r][c] == "X":
                     pygame.draw.circle(self.screen, RED, (int(
-                        r*self.tile_size+self.tile_size/2), self.height-int(c*self.tile_size+self.tile_size/2)), self.RADIUS)
+                        r * self.tile_size + self.tile_size / 2),
+                                                          self.height - int(c * self.tile_size + self.tile_size / 2)),
+                                       self.RADIUS)
                 elif board[r][c] == "O":
                     pygame.draw.circle(self.screen, YELLOW, (int(
-                        r*self.tile_size+self.tile_size/2), self.height-int(c*self.tile_size+self.tile_size/2)), self.RADIUS)
+                        r * self.tile_size + self.tile_size / 2), self.height - int(
+                        c * self.tile_size + self.tile_size / 2)), self.RADIUS)
         pygame.display.update()
 
     def draw_message(self, message, color):
         pygame.draw.rect(self.screen, BLACK, (0, 0, self.width, self.tile_size))
         text = self.textFont.render(message, True, color)
-        text_rect = text.get_rect(center=(self.width/2, self.tile_size/2))
+        text_rect = text.get_rect(center=(self.width / 2, self.tile_size / 2))
         self.screen.blit(text, text_rect)
 
     def run(self):
@@ -117,10 +102,10 @@ class Game:
                     posx = event.pos[0]
                     if turns % 2 == 0:
                         pygame.draw.circle(
-                            self.screen, RED, (posx, int(self.tile_size/2)), self.RADIUS)
+                            self.screen, RED, (posx, int(self.tile_size / 2)), self.RADIUS)
                     else:
                         pygame.draw.circle(
-                            self.screen, YELLOW, (posx, int(self.tile_size/2)), self.RADIUS)
+                            self.screen, YELLOW, (posx, int(self.tile_size / 2)), self.RADIUS)
                 pygame.display.update()
 
                 if gameMode == 2 and turns % 2 == 1:
@@ -130,7 +115,7 @@ class Game:
 
                     if gameBoard.detectWin() == "O" and gameMode == 2:
                         message = "Computer Win!"
-                        print(message+"\n")
+                        print(message + "\n")
                         self.draw_message(message, YELLOW)
                         running = False
 
@@ -152,27 +137,27 @@ class Game:
                     pygame.draw.rect(self.screen, BLACK, (0, 0, self.width, self.tile_size))
                     if turns % 2 == 0:
                         posx = event.pos[0]
-                        col = int(math.floor(posx/self.tile_size))
+                        col = int(math.floor(posx / self.tile_size))
                         print("Player 1 turn")
                         gameBoard.dropLetter(self.choice(
                             1, gameBoard, depth, "X", col), "X")
 
                         if gameBoard.detectWin() == "X":
                             message = "Player 1 Win!"
-                            print(message+"\n")
+                            print(message + "\n")
                             self.draw_message(message, RED)
                             running = False
 
                     else:
                         posx = event.pos[0]
-                        col = int(math.floor(posx/self.tile_size))
+                        col = int(math.floor(posx / self.tile_size))
                         print(turnMessage)
                         gameBoard.dropLetter(self.choice(
                             2, gameBoard, depth, "O", col), "O")
 
                         if gameBoard.detectWin() == "O" and gameMode == 1:
                             message = "Player 2 Win!"
-                            print(message+"\n")
+                            print(message + "\n")
                             self.draw_message(message, YELLOW)
                             running = False
 
@@ -196,3 +181,6 @@ if __name__ == "__main__":
     game.init_pygame()
 
     game.run()
+
+    pygame.display.quit()
+    pygame.quit()
