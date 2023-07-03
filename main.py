@@ -1,8 +1,44 @@
 import pygame
 import math
+from ast import literal_eval
 
 from board import Board
 import minimax
+
+import socket
+import sys
+from threading import Thread
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+ip_address = "127.0.0.1"
+port = 8081
+
+server.connect((ip_address, port))
+
+client_id = int(server.recv(2048).decode().split()[-1])
+print("Connected to server with ID", client_id)
+
+playingBoard = ""
+
+
+def send_msg(sock, inp=-1):
+    while True:
+        if inp == -1:
+            continue
+        sock.send((str(client_id) + ":" + inp).encode())
+        inp = -1
+
+
+def recv_msg(sock):
+    while True:
+        data = sock.recv(2048)
+        if data.decode().startswith("board:"):
+            global playingBoard
+            playingBoard = data.decode().split(":")[1]
+            # print("Received board from server in thread: ", playingBoard)
+        else:
+            sys.stdout.write(data.decode())
+
 
 BOARD_WIDTH = 7
 BOARD_HEIGHT = 6
@@ -17,14 +53,17 @@ YELLOW = (255, 209, 102)
 
 class Button:
     gameMode = 0
+
     def __init__(self, x, y, image, scale):
         width = image.get_width()
         height = image.get_height()
-        self.image = pygame.transform.scale(image, (int(width * scale), int(height * scale)))
+        self.image = pygame.transform.scale(
+            image, (int(width * scale), int(height * scale))
+        )
         self.rect = self.image.get_rect()
         self.rect.topleft = (x, y)
         self.clicked = False
-    
+
     def draw(self, surface):
         action = False
 
@@ -34,17 +73,18 @@ class Button:
             if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
                 self.clicked = True
                 action = True
-        
+
         if pygame.mouse.get_pressed()[0] == 0:
             self.clicked = False
 
         surface.blit(self.image, (self.rect.x, self.rect.y))
 
         return action
-        
+
 
 class Game:
     gameMode = 0
+
     def __init__(self, tile_size):
         self.tile_size = tile_size
 
@@ -62,17 +102,16 @@ class Game:
 
     # Human turn
     def humanChoice(self, board, slot):
-       
         # Pick slot/column
         while True:
             if board.checkOpen(slot) == 1:
-                print(board.checkOpen(slot))
+                # print(board.checkOpen(slot))
                 return slot
             else:
                 print("Slot is full")
 
     def choice(self, player, board, depth, letter, slot=0):
-        print(Game.gameMode)
+        # print(Game.gameMode)
         if Game.gameMode == 1 or player == 1:
             return self.humanChoice(board, slot)
         else:
@@ -84,24 +123,48 @@ class Game:
     def draw_board(self, board):
         for c in range(BOARD_HEIGHT):
             for r in range(BOARD_WIDTH):
-                pygame.draw.rect(self.screen, BLUE, (
-                    r * self.tile_size, c * self.tile_size + self.tile_size, self.tile_size, self.tile_size))
-                pygame.draw.circle(self.screen, BLACK, (int(
-                    r * self.tile_size + self.tile_size / 2),
-                                                        int(c * self.tile_size + self.tile_size + self.tile_size / 2)),
-                                   self.RADIUS)
+                pygame.draw.rect(
+                    self.screen,
+                    BLUE,
+                    (
+                        r * self.tile_size,
+                        c * self.tile_size + self.tile_size,
+                        self.tile_size,
+                        self.tile_size,
+                    ),
+                )
+                pygame.draw.circle(
+                    self.screen,
+                    BLACK,
+                    (
+                        int(r * self.tile_size + self.tile_size / 2),
+                        int(c * self.tile_size + self.tile_size + self.tile_size / 2),
+                    ),
+                    self.RADIUS,
+                )
 
         for c in range(BOARD_HEIGHT):
             for r in range(BOARD_WIDTH):
                 if board[r][c] == "X":
-                    pygame.draw.circle(self.screen, RED, (int(
-                        r * self.tile_size + self.tile_size / 2),
-                                                          self.height - int(c * self.tile_size + self.tile_size / 2)),
-                                       self.RADIUS)
+                    pygame.draw.circle(
+                        self.screen,
+                        RED,
+                        (
+                            int(r * self.tile_size + self.tile_size / 2),
+                            self.height - int(c * self.tile_size + self.tile_size / 2),
+                        ),
+                        self.RADIUS,
+                    )
                 elif board[r][c] == "O":
-                    pygame.draw.circle(self.screen, YELLOW, (int(
-                        r * self.tile_size + self.tile_size / 2), self.height - int(
-                        c * self.tile_size + self.tile_size / 2)), self.RADIUS)
+                    pygame.draw.circle(
+                        self.screen,
+                        YELLOW,
+                        (
+                            int(r * self.tile_size + self.tile_size / 2),
+                            self.height - int(c * self.tile_size + self.tile_size / 2),
+                        ),
+                        self.RADIUS,
+                    )
         pygame.display.update()
 
     def draw_message(self, message, color):
@@ -111,7 +174,6 @@ class Game:
         self.screen.blit(text, text_rect)
 
     def run(self):
-        
         # Game.gameMode = 1
         if Game.gameMode == 2:
             turnMessage = "Computer turn"
@@ -123,50 +185,57 @@ class Game:
         turns = 0
         depth = 6
 
-        #Load Button
-        pvp = pygame.image.load('img/pvp.png').convert_alpha()
-        pvc = pygame.image.load('img/pvc.png').convert_alpha()
-        play = pygame.image.load('img/play.png').convert_alpha()
-        quit = pygame.image.load('img/quit.png').convert_alpha()
-        back = pygame.image.load('img/back.png').convert_alpha()
-        close = pygame.image.load('img/close.png').convert_alpha()
-        
-        
+        # Load Button
+        pvp = pygame.image.load("img/pvp.png").convert_alpha()
+        pvc = pygame.image.load("img/pvc.png").convert_alpha()
+        online = pygame.image.load("img/online.png").convert_alpha()
+        play = pygame.image.load("img/play.png").convert_alpha()
+        quit = pygame.image.load("img/quit.png").convert_alpha()
+        back = pygame.image.load("img/back.png").convert_alpha()
+        close = pygame.image.load("img/close.png").convert_alpha()
+
         # Setting the Button (x Position, y Postion, img, Scale)
         pvpButton = Button(100, 250, pvp, 0.8)
-        pvcButton = Button(300, 250, pvc, 0.8)
+        pvcButton = Button(268.5, 250, pvc, 0.8)
+        onlineButton = Button(437, 250, online, 0.8)
         playButton = Button(250, 250, play, 0.8)
         quitButton = Button(250, 350, quit, 0.8)
         backButton = Button(100, 100, back, 0.8)
         closeButton = Button(550, 100, close, 0.8)
-        
-        #Screen State
-        playScreen = False 
-        setGameMode = False 
+        createButton = Button(250, 250, play, 0.8)
+        joinButton = Button(250, 350, play, 0.8)
+        roomSelectionButton = Button(250, 250, play, 0.8)
 
+        # Screen State
+        playScreen = False
+        gameModeSet = False
+        roomSet = False
+        roomSelection = False
+
+        sendMessage = -1
+
+        global board
         board = gameBoard.getArray()
         while running:
             for event in pygame.event.get():
                 if playScreen:
-                    if setGameMode:
-                        self.draw_board(board)
+                    if gameModeSet and (
+                        Game.gameMode != 3
+                        or (Game.gameMode == 3 and roomSet and roomSelection)
+                    ):
+                        if Game.gameMode == 3 and turns > 1:
+                            self.draw_board(playingBoardArray)
+                        else:
+                            self.draw_board(board)
+
                         if event.type == pygame.QUIT:
                             running = False
-                        if event.type == pygame.MOUSEMOTION:
-                            pygame.draw.rect(self.screen, BLACK, (0, 0, self.width, self.tile_size))
-                            posx = event.pos[0]
-                            if turns % 2 == 0:
-                                pygame.draw.circle(
-                                    self.screen, RED, (posx, int(self.tile_size / 2)), self.RADIUS)
-                            else:
-                                pygame.draw.circle(
-                                    self.screen, YELLOW, (posx, int(self.tile_size / 2)), self.RADIUS)
-                        pygame.display.update()
 
                         if Game.gameMode == 2 and turns % 2 == 1:
                             print(turnMessage)
-                            gameBoard.dropLetter(self.choice(
-                                2, gameBoard, depth, "O"), "O")
+                            gameBoard.dropLetter(
+                                self.choice(2, gameBoard, depth, "O"), "O"
+                            )
 
                             if gameBoard.detectWin() == "O" and Game.gameMode == 2:
                                 message = "Computer Win!"
@@ -174,7 +243,7 @@ class Game:
                                 self.draw_message(message, YELLOW)
                                 running = False
 
-                            gameBoard.showBoard()
+                            # gameBoard.showBoard()
                             board = gameBoard.getArray()
                             self.draw_board(board)
 
@@ -187,41 +256,86 @@ class Game:
 
                             if not running:
                                 pygame.time.wait(3000)
+
+                        if event.type == pygame.MOUSEMOTION:
+                            pygame.draw.rect(
+                                self.screen, BLACK, (0, 0, self.width, self.tile_size)
+                            )
+                            posx = event.pos[0]
+                            if turns % 2 == 0:
+                                pygame.draw.circle(
+                                    self.screen,
+                                    RED,
+                                    (posx, int(self.tile_size / 2)),
+                                    self.RADIUS,
+                                )
+                            else:
+                                pygame.draw.circle(
+                                    self.screen,
+                                    YELLOW,
+                                    (posx, int(self.tile_size / 2)),
+                                    self.RADIUS,
+                                )
+                            pygame.display.update()
 
                         if event.type == pygame.MOUSEBUTTONDOWN:
-                            pygame.draw.rect(self.screen, BLACK, (0, 0, self.width, self.tile_size))
-                            if turns % 2 == 0:
-                                posx = event.pos[0]
-                                col = int(math.floor(posx / self.tile_size))
-                                print("Player 1 turn")
-                                gameBoard.dropLetter(self.choice(
-                                    1, gameBoard, depth, "X", col), "X")
+                            pygame.draw.rect(
+                                self.screen, BLACK, (0, 0, self.width, self.tile_size)
+                            )
 
-                                if gameBoard.detectWin() == "X":
-                                    message = "Player 1 Win!"
-                                    print(message + "\n")
-                                    self.draw_message(message, RED)
-                                    running = False
+                            posx = event.pos[0]
+                            col = int(math.floor(posx / self.tile_size))
+
+                            if Game.gameMode == 3:
+                                Thread(
+                                    target=send_msg,
+                                    args=(
+                                        server,
+                                        str(col + 1),
+                                    ),
+                                ).start()
+                                turns += 2
+                                pygame.time.wait(500)
+                                # print("Received board from server (string): [", playingBoard, "]")
+
+                                # convert playingBoard from string to 2D array
+                                playingBoardArray = literal_eval(playingBoard)
+                                # print("Converted board from string to 2D array: " + str(playingBoardArray) + " with type " + str(type(playingBoardArray)))
+
+                                self.draw_board(playingBoardArray)
 
                             else:
-                                posx = event.pos[0]
-                                col = int(math.floor(posx / self.tile_size))
-                                print(turnMessage)
-                                gameBoard.dropLetter(self.choice(
-                                    2, gameBoard, depth, "O", col), "O")
+                                if turns % 2 == 0:
+                                    gameBoard.dropLetter(
+                                        self.choice(1, gameBoard, depth, "X", col), "X"
+                                    )
 
-                                if gameBoard.detectWin() == "O" and Game.gameMode == 1:
-                                    message = "Player 2 Win!"
-                                    print(message + "\n")
-                                    self.draw_message(message, YELLOW)
-                                    running = False
+                                    if gameBoard.detectWin() == "X":
+                                        message = "Player 1 Win!"
+                                        print(message + "\n")
+                                        self.draw_message(message, RED)
+                                        running = False
 
+                                else:
+                                    # print(turnMessage)
+                                    gameBoard.dropLetter(
+                                        self.choice(2, gameBoard, depth, "O", col), "O"
+                                    )
 
-                            gameBoard.showBoard()
-                            board = gameBoard.getArray()
-                            self.draw_board(board)
+                                    if (
+                                        gameBoard.detectWin() == "O"
+                                        and Game.gameMode == 1
+                                    ):
+                                        message = "Player 2 Win!"
+                                        print(message + "\n")
+                                        self.draw_message(message, YELLOW)
+                                        running = False
 
-                            turns += 1
+                                # gameBoard.showBoard()
+                                board = gameBoard.getArray()
+                                self.draw_board(board)
+
+                                turns += 1
 
                             if turns == 50:
                                 print("Draw!\n")
@@ -230,31 +344,73 @@ class Game:
 
                             if not running:
                                 pygame.time.wait(3000)
+
+                    elif gameModeSet and Game.gameMode == 3 and not roomSet:
+                        Thread(target=recv_msg, args=(server,)).start()
+
+                        # Display Room Screen
+                        self.screen.fill((253, 240, 213))
+                        if createButton.draw(self.screen):
+                            server.send((str(client_id) + ":1").encode())
+                            roomSet = True
+                            roomSelection = True
+                            print("Room Created")
+                        if joinButton.draw(self.screen):
+                            server.send((str(client_id) + ":2").encode())
+                            roomSet = True
+                            print("Room Joining")
+                        if backButton.draw(self.screen):
+                            gameModeSet = False
+                        if closeButton.draw(self.screen):
+                            running = False
+                        pygame.display.update()
+
+                    elif (
+                        gameModeSet
+                        and Game.gameMode == 3
+                        and not roomSelection
+                        and roomSet
+                    ):
+                        # Display Room Screen
+                        self.screen.fill((253, 240, 213))
+                        if roomSelectionButton.draw(self.screen):
+                            server.send((str(client_id) + ":0").encode())
+                            roomSelection = True
+                        if backButton.draw(self.screen):
+                            roomSet = False
+                        if closeButton.draw(self.screen):
+                            running = False
+                        pygame.display.update()
+
                     else:
-                        #Display Game Mode Screen
+                        # Display Game Mode Screen
                         self.screen.fill((253, 240, 213))
                         if pvpButton.draw(self.screen):
                             Game.gameMode = 1
-                            print('masuk')
-                            setGameMode = True
+                            print("Masuk mode 1")
+                            gameModeSet = True
                         if pvcButton.draw(self.screen):
                             Game.gameMode = 2
-                            print('masuk')
-                            setGameMode = True
+                            print("Masuk mode 2")
+                            gameModeSet = True
+                        if onlineButton.draw(self.screen):
+                            Game.gameMode = 3
+                            print("Masuk mode 3")
+                            gameModeSet = True
                         if backButton.draw(self.screen):
                             playScreen = False
                         if closeButton.draw(self.screen):
                             running = False
                         pygame.display.update()
                 else:
-                    #Display Home Page Screen
+                    # Display Home Page Screen
                     self.screen.fill((253, 240, 213))
                     if playButton.draw(self.screen):
+                        pygame.time.wait(200)
                         playScreen = True
                     if quitButton.draw(self.screen):
                         running = False
-                    pygame.display.update() 
-
+                    pygame.display.update()
 
 
 if __name__ == "__main__":
