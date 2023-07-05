@@ -71,6 +71,8 @@ BOARD_HEIGHT = 6
 
 WINDOW_SIZE = 800
 
+TILE_SIZE = 100
+
 BLUE = (20, 50, 150)
 BLACK = (30, 30, 30)
 RED = (193, 18, 31)
@@ -303,7 +305,7 @@ class Game:
                             pygame.draw.rect(
                                 self.screen, BLACK, (0, 0, self.width, self.tile_size)
                             )
-                            posx = event.pos[0]
+                            posx = int(event.pos[0]//self.tile_size*self.tile_size + self.tile_size/2)
                             if turns % 2 == 0:
                                 pygame.draw.circle(
                                     self.screen,
@@ -486,7 +488,7 @@ class Game:
 
 
 if __name__ == "__main__":
-    game = Game(100)
+    game = Game(TILE_SIZE)
     game.init_pygame()
 
     game.run()
