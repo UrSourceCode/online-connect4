@@ -28,6 +28,9 @@ json_data = {
 
 json_file_name = "game_data.json"
 
+with open(json_file_name, 'w') as file:
+    json.dump(json_data, file)
+
 json_game_template = {
     "room": -1,
     "player": {
@@ -151,26 +154,7 @@ def client_thread(conn, addr):
                     if current_player_in_groups[client_group] == player_num:
                         # print("Player {} move: {}".format(player_num, message_text))
                         process_move(conn, int(message_text) - 1, player_num, client_group, game_in_groups[client_group])
-                        winner = game_in_groups[client_group].detectWin()
-                        if winner != " ":
-                
-                            with open(json_file_name, 'r') as file:
-                                json_data = json.load(file)
-
-                            json_data["game"][client_group]["board"] = game_in_groups[client_group].getArray()
-                            if winner == "X":
-                                json_data["game"][client_group]["winner_id"] = json_data["game"][client_group]["player"]["red_id"]
-                            else:
-                                json_data["game"][client_group]["winner_id"] = json_data["game"][client_group]["player"]["yellow_id"]
-                            json_data["game"][client_group]["game_over"] = True
-
-                            with open(json_file_name, 'w') as file:
-                                json.dump(json_data, file)
-
-                            # message_to_send = f"winner:{client_id}"
-                            broadcast_group(conn, client_group, json_data)
-                        else:
-                            current_player_in_groups[client_group] = 2 if current_player_in_groups[client_group] == 1 else 1
+                        current_player_in_groups[client_group] = 2 if current_player_in_groups[client_group] == 1 else 1
                     else:
                         conn.send("Wait for your turn...".encode())
             else:
@@ -199,6 +183,14 @@ def process_move(connection, move, player_num, group, game):
 
     json_data["game"][group]["board"] = playingBoard
 
+    winner = game.detectWin()
+    if winner != " ":
+        if winner == "X":
+            json_data["game"][group]["winner_id"] = json_data["game"][group]["player"]["red_id"]
+        else:
+            json_data["game"][group]["winner_id"] = json_data["game"][group]["player"]["yellow_id"]
+        json_data["game"][group]["game_over"] = True
+
     with open(json_file_name, 'w') as file:
         json.dump(json_data, file)
 
@@ -212,6 +204,7 @@ def broadcast_group(connection, group, message):
     global client_groups
     client_ids = client_groups[group]
     # adjust_message = str(message)
+    # print("json_data:", message)
     for client_id, client_conn in list_of_clients.items():
         if client_id in client_ids:
             try:

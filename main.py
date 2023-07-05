@@ -19,28 +19,36 @@ server.connect((ip_address, port))
 client_id = int(server.recv(2048).decode().split()[-1])
 print("Connected to server with ID", client_id)
 
-group_id = 0
-
 json_data = {
     "game": []
 }
+
+# Get initial game data from server
+data = server.recv(2048).decode()
+try:
+    json_data = json.loads(data)
+except ValueError as e:
+    sys.stdout.write(data)
+
+group_id = 0
 
 def send_msg(sock, inp=-1):
     while True:
         if inp == -1:
             continue
+
         sock.send((str(client_id) + ":" + inp).encode())
         inp = -1
 
 def recv_msg(sock):
     while True:
-        data = sock.recv(2048)
+        data = sock.recv(2048).decode()
 
         try:
             global json_data
-            json_data = json.loads(data.decode())
+            json_data = json.loads(data)
         except ValueError as e:
-            sys.stdout.write(data.decode())
+            sys.stdout.write(data)
 
 
 BOARD_WIDTH = 7
@@ -110,13 +118,11 @@ class Game:
         # Pick slot/column
         while True:
             if board.checkOpen(slot) == 1:
-                # print(board.checkOpen(slot))
                 return slot
             else:
                 print("Slot is full")
 
     def choice(self, player, board, depth, letter, slot=0):
-        # print(Game.gameMode)
         if Game.gameMode == 1 or player == 1:
             return self.humanChoice(board, slot)
         else:
@@ -179,7 +185,6 @@ class Game:
         self.screen.blit(text, text_rect)
 
     def run(self):
-        # Game.gameMode = 1
         if Game.gameMode == 2:
             turnMessage = "Computer turn"
         else:
@@ -234,13 +239,33 @@ class Game:
                         Game.gameMode != 3
                         or (Game.gameMode == 3 and roomSet and roomSelection)
                     ):
-                        if Game.gameMode == 3 and json_data["game"][group_id]["game_over"]:
-                            message = "Player ID %d Win!" % (json_data["game"][group_id]["winner_id"])
+                        # Check if game is over
+                        try:
+                            game_over = json_data["game"][group_id]["game_over"]
+                            waiting_player = True if json_data["game"][group_id]["player"]["yellow_id"] == -1 else False
+                        except:
+                            game_over = False
+                            waiting_player = True
+
+                        if Game.gameMode == 3 and game_over:
+                            print("Game Over")
+
+                            # Check if client is the winner
+                            if client_id == json_data["game"][group_id]["winner_id"]:
+                                message = "You Win!"
+                            else:
+                                message = "You Lose!"
+
+                            # Check if red win
                             if json_data["game"][group_id]["winner_id"] == json_data["game"][group_id]["player"]["red_id"]:
                                 self.draw_message(message, RED)
                             else:
                                 self.draw_message(message, YELLOW)
+
                             running = False
+
+                        elif Game.gameMode == 3 and waiting_player:
+                            self.draw_message("Waiting for player...", RED)
 
                         if Game.gameMode == 3 and turns > 0:
                             self.draw_board(json_data["game"][group_id]["board"])
@@ -253,7 +278,6 @@ class Game:
                             pygame.display.quit()
                             pygame.quit()
                             sys.exit()
-                            break
                             break
 
                         if Game.gameMode == 2 and turns % 2 == 1:
@@ -268,7 +292,6 @@ class Game:
                                 self.draw_message(message, YELLOW)
                                 running = False
 
-                            # gameBoard.showBoard()
                             board = gameBoard.getArray()
                             self.draw_board(board)
 
@@ -278,7 +301,7 @@ class Game:
                                 print("Draw!\n")
                                 running = False
 
-                        if event.type == pygame.MOUSEMOTION:
+                        if event.type == pygame.MOUSEMOTION and (Game.gameMode != 3 or (Game.gameMode == 3 and not waiting_player)):
                             pygame.draw.rect(
                                 self.screen, BLACK, (0, 0, self.width, self.tile_size)
                             )
@@ -316,16 +339,6 @@ class Game:
                                     ),
                                 ).start()
                                 turns += 2
-                                
-                                # pygame.time.wait(1000)
-                                
-                                if json_data["game"][group_id]["game_over"]:
-                                    message = "You Win!"
-                                    if turns % 2 == 0:
-                                        self.draw_message(message, RED)
-                                    else:
-                                        self.draw_message(message, YELLOW)
-                                    running = False
 
                                 self.draw_board(json_data["game"][group_id]["board"])
 
@@ -342,7 +355,6 @@ class Game:
                                         running = False
 
                                 else:
-                                    # print(turnMessage)
                                     gameBoard.dropLetter(
                                         self.choice(2, gameBoard, depth, "O", col), "O"
                                     )
@@ -356,7 +368,6 @@ class Game:
                                         self.draw_message(message, YELLOW)
                                         running = False
 
-                                # gameBoard.showBoard()
                                 board = gameBoard.getArray()
                                 self.draw_board(board)
 
@@ -403,15 +414,16 @@ class Game:
                     ):
                         # Display Room Selection Screen
                         self.screen.fill((253, 240, 213))
-                        for i in range(len(json_data["game"])):
-                            
-                            # TODO: Change the button text to room name and make the button position dynamic
 
-                            if roomSelectionButton.draw(self.screen):
-                                group_id = json_data["game"][i]["room"]
-                                server.send((str(client_id) + ":" + str(group_id)).encode())
-                                roomSelection = True
-                                turns += 1
+                        # TODO: Change the button text to room name and make the button position dynamic
+
+                        if roomSelectionButton.draw(self.screen):
+                            # group_id = json_data["game"][i]["room"]
+                            group_id = 0
+                            server.send((str(client_id) + ":" + str(group_id)).encode())
+                            roomSelection = True
+                            turns += 1
+                            self.screen.fill(BLACK)
                         if backButton.draw(self.screen):
                             roomSet = False
                         if closeButton.draw(self.screen):
@@ -425,16 +437,18 @@ class Game:
 
                     else:
                         # Display Game Mode Screen
-                        pygame.time.wait(10)
+                        pygame.time.wait(20)
                         self.screen.fill((253, 240, 213))
                         if pvpButton.draw(self.screen):
                             Game.gameMode = 1
                             print("Masuk mode 1")
                             gameModeSet = True
+                            self.screen.fill(BLACK)
                         if pvcButton.draw(self.screen):
                             Game.gameMode = 2
                             print("Masuk mode 2")
                             gameModeSet = True
+                            self.screen.fill(BLACK)
                         if onlineButton.draw(self.screen):
                             Game.gameMode = 3
                             print("Masuk mode 3")
@@ -472,3 +486,7 @@ if __name__ == "__main__":
 
     pygame.display.quit()
     pygame.quit()
+    Thread(target=send_msg, args=(server,)).join()
+    Thread(target=recv_msg, args=(server,)).join()
+    server.close()
+    sys.exit()
