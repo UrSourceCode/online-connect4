@@ -21,11 +21,6 @@ print("Connected to server with ID", client_id)
 
 group_id = 0
 
-# playingBoard `= [[' ', ' ', ' ', ' ', ' ', ' '], [' ', ' ', ' ', ' ', ' ', ' '], [' ', ' ', ' ', ' ', ' ', ' '], [' ', ' ', ' ', ' ', ' ', ' '], [' ', ' ', ' ', ' ', ' ', ' '], [' ', ' ', ' ', ' ', ' ', ' '], [' ', ' ', ' ', ' ', ' ', ' ']]
-# roomList = []
-# onlineChoice = []
-# winnerID = -1`
-
 json_data = {
     "game": []
 }
@@ -40,25 +35,7 @@ def send_msg(sock, inp=-1):
 def recv_msg(sock):
     while True:
         data = sock.recv(2048)
-        # if data.decode().startswith("board:"):
-        #     global playingBoard
-        #     playingBoard = literal_eval(data.decode().split(":")[1])
-        #     # print("Received board from server in thread: ", playingBoard)
-        # if data.decode().startswith("room:"):
-        #     global roomList
-        #     roomList = literal_eval(data.decode().split(":")[1])
-        #     # print("Received room list from server in thread: ", str(roomList) + " with type " + str(type(roomList)))
-        # elif data.decode().startswith("choice:"):
-        #     global onlineChoice
-        #     onlineChoice = literal_eval(data.decode().split(":")[1])
-        #     # print("Received online choice from server in thread:", str(onlineChoice) + " with type " + str(type(onlineChoice)))
-        # elif data.decode().startswith("winner:"):
-        #     global winnerID
-        #     winnerID = int(data.decode().split(":")[1])
-        #     # print("Received winner from server in thread:", winnerID)
-        # else:
-        #     sys.stdout.write(data.decode())
-        
+
         try:
             global json_data
             json_data = json.loads(data.decode())
@@ -257,7 +234,7 @@ class Game:
                         Game.gameMode != 3
                         or (Game.gameMode == 3 and roomSet and roomSelection)
                     ):
-                        if json_data["game"][group_id]["game_over"]:
+                        if Game.gameMode == 3 and json_data["game"][group_id]["game_over"]:
                             message = "Player ID %d Win!" % (json_data["game"][group_id]["winner_id"])
                             if json_data["game"][group_id]["winner_id"] == json_data["game"][group_id]["player"]["red_id"]:
                                 self.draw_message(message, RED)
