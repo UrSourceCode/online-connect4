@@ -47,6 +47,7 @@ def recv_msg(sock):
         try:
             global json_data
             json_data = json.loads(data)
+            print(json_data)
         except ValueError as e:
             sys.stdout.write(data)
 
@@ -264,6 +265,10 @@ class Game:
                         try:
                             game_over = json_data["game"][group_id]["game_over"]
                             waiting_player = True if json_data["game"][group_id]["player"]["yellow_id"] == -1 else False
+                            # print("waiting json_data: ", json_data["game"][group_id]["player"]["yellow_id"], "waiting_player: ", waiting_player)
+                            # print("game_over json_data: ", json_data["game"][group_id]["game_over"])
+                            print("group_id:", group_id)
+
                         except:
                             game_over = False
                             waiting_player = True
@@ -411,6 +416,7 @@ class Game:
                             server.send((str(client_id) + ":1").encode())
                             roomSet = True
                             roomSelection = True
+                            group_id = len(json_data["game"])
                             print("Room Created")
                         if len(json_data["game"]) > 0 and joinButton.draw(self.screen):
                             server.send((str(client_id) + ":2").encode())
@@ -439,9 +445,12 @@ class Game:
                         # TODO: Change the button text to room name and make the button position dynamic
 
                         for roomSelectionButton in roomSelectionButtons:
+                            i = roomSelectionButtons.index(roomSelectionButton)
                             if roomSelectionButton.draw(self.screen):
-                                groupid = json_data["game"][i]["room"]
-                                server.send((str(client_id) + ":" + str(groupid)).encode())
+                                # groupid = json_data["game"][i]["room"]
+                                print("groupid:", i)
+                                group_id = i
+                                server.send((str(client_id) + ":" + str(i)).encode())
                                 roomSelection = True
                                 turns += 1
                                 self.screen.fill(BLACK)
