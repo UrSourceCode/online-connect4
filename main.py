@@ -47,7 +47,6 @@ def recv_msg(sock):
         try:
             global json_data
             json_data = json.loads(data)
-            print(json_data)
         except ValueError as e:
             sys.stdout.write(data)
 
@@ -265,9 +264,6 @@ class Game:
                         try:
                             game_over = json_data["game"][group_id]["game_over"]
                             waiting_player = True if json_data["game"][group_id]["player"]["yellow_id"] == -1 else False
-                            # print("waiting json_data: ", json_data["game"][group_id]["player"]["yellow_id"], "waiting_player: ", waiting_player)
-                            # print("game_over json_data: ", json_data["game"][group_id]["game_over"])
-                            print("group_id:", group_id)
 
                         except:
                             game_over = False
@@ -447,8 +443,6 @@ class Game:
                         for roomSelectionButton in roomSelectionButtons:
                             i = roomSelectionButtons.index(roomSelectionButton)
                             if roomSelectionButton.draw(self.screen):
-                                # groupid = json_data["game"][i]["room"]
-                                print("groupid:", i)
                                 group_id = i
                                 server.send((str(client_id) + ":" + str(i)).encode())
                                 roomSelection = True
