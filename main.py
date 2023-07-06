@@ -75,7 +75,7 @@ class Button:
         self.dynamic_elecation = elevation
         self.original_y_pos = pos[1]
 
-        gui_font = pygame.font.Font(None,30)
+        gui_font = pygame.font.SysFont(None,30)
 
         # top Rectangle
         self.top_rect = pygame.Rect(pos, (width, height))
@@ -102,7 +102,6 @@ class Button:
                 
         pygame.draw.rect(surface,self.bottom_color, self.bottom_rect,border_radius = 12)
         pygame.draw.rect(surface,self.top_color, self.top_rect,border_radius = 12)
-        pos = pygame.mouse.get_pos()
         surface.blit(self.text_surf, self.text_rect)
 
         mouse_pos = pygame.mouse.get_pos()
@@ -258,6 +257,11 @@ class Game:
         turns = 0
         depth = 6
 
+        # set Background
+        bgImage = pygame.image.load("img/bg.png").convert_alpha()
+        bgSize = pygame.transform.scale(bgImage, (800, 800))
+        self.screen.blit(bgSize, (0,0))
+
         # Load Button
         pvp = pygame.image.load("img/pvp.png").convert_alpha()
         pvc = pygame.image.load("img/pvc.png").convert_alpha()
@@ -286,9 +290,9 @@ class Game:
         # new Button Class
         # (self, text, width, height, pos)
         playButton = Button('Play', 200, 40, (250, 250), 5)
-        pvpButton = Button('PVP', 150, 100, (100, 250), 5)
-        pvcButton = Button('PVC', 150, 100, (275, 250), 5)
-        onlineButton = Button('Multi Player', 150, 100, (450, 250), 5)
+        pvpButton = Button('Player V Player', 160, 100, (100, 250), 5)
+        pvcButton = Button('Player V AI', 160, 100, (275, 250), 5)
+        onlineButton = Button('Multi Player', 160, 100, (450, 250), 5)
         quitButton = Button('Quit', 200, 40, (250, 350), 5)
         backButton = Button('Back', 100, 40, (100, 100), 5)
         closeButton = Button('Close', 100, 40, (500, 100), 5)
@@ -480,7 +484,7 @@ class Game:
                         Thread(target=recv_msg, args=(server,)).start()
 
                         # Display Create or Join Room Screen
-                        self.screen.fill((253, 240, 213))
+                        self.screen.blit(bgSize, (0,0))
                         if createButton.draw(self.screen):
                             server.send((str(client_id) + ":1").encode())
                             roomSet = True
@@ -509,7 +513,7 @@ class Game:
                         and roomSet
                     ):
                         # Display Room Selection Screen
-                        self.screen.fill((253, 240, 213))
+                        self.screen.blit(bgSize, (0,0))
 
                         # TODO: Change the button text to room name and make the button position dynamic
 
@@ -536,7 +540,7 @@ class Game:
                     else:
                         # Display Game Mode Screen
                         pygame.time.wait(20)
-                        self.screen.fill((253, 240, 213))
+                        self.screen.blit(bgSize, (0,0))
                         pygame.event.wait(10)
                         if pvpButton.draw(self.screen):
                             Game.gameMode = 1
@@ -564,7 +568,7 @@ class Game:
                         pygame.display.update()
                 else:
                     # Display Home Page Screen
-                    self.screen.fill((253, 240, 213))
+                    self.screen.blit(bgSize, (0,0))
                     if playButton.draw(self.screen):
                         playScreen = True
                         pygame.event.wait(10)
