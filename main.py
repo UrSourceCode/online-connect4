@@ -67,32 +67,90 @@ YELLOW = (255, 209, 102)
 class Button:
     gameMode = 0
 
-    def __init__(self, x, y, image, scale):
-        width = image.get_width()
-        height = image.get_height()
-        self.image = pygame.transform.scale(
-            image, (int(width * scale), int(height * scale))
-        )
-        self.rect = self.image.get_rect()
-        self.rect.topleft = (x, y)
-        self.clicked = False
+    def __init__(self, text, width, height, pos, elevation):
+                
+        #Core attributes 
+        self.pressed = False
+        self.elevation = elevation
+        self.dynamic_elecation = elevation
+        self.original_y_pos = pos[1]
 
+        gui_font = pygame.font.Font(None,30)
+
+        # top Rectangle
+        self.top_rect = pygame.Rect(pos, (width, height))
+        self.top_color = '#FFC20E'
+
+        # bottom rectangle 
+        self.bottom_rect = pygame.Rect(pos,(width,height))
+        self.bottom_color = '#86230E'
+
+        #text
+        self.text_surf = gui_font.render(text, True, '#000000')
+        self.text_rect = self.text_surf.get_rect(center = self.top_rect.center)
+    
     def draw(self, surface):
+        # Initiate button display state
         action = False
 
+        # elevation logic 
+        self.top_rect.y = self.original_y_pos - self.dynamic_elecation
+        self.text_rect.center = self.top_rect.center 
+
+        self.bottom_rect.midtop = self.top_rect.midtop
+        self.bottom_rect.height = self.top_rect.height + self.dynamic_elecation
+                
+        pygame.draw.rect(surface,self.bottom_color, self.bottom_rect,border_radius = 12)
+        pygame.draw.rect(surface,self.top_color, self.top_rect,border_radius = 12)
         pos = pygame.mouse.get_pos()
+        surface.blit(self.text_surf, self.text_rect)
 
-        if self.rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
-                self.clicked = True
-                action = True
+        mouse_pos = pygame.mouse.get_pos()
+        if self.top_rect.collidepoint(mouse_pos):
+            self.top_color = '#D74B4B'
+            if pygame.mouse.get_pressed()[0]:
+                self.dynamic_elecation = 0
+                self.pressed = True
+            else:
+                self.dynamic_elecation = self.elevation
+                if self.pressed:
+                    action = True
+                    print('click')
+                    self.pressed = False
+        else:
+            self.dynamic_elecation = self.elevation
+            self.top_color = '#FFC20E'
 
-        if pygame.mouse.get_pressed()[0] == 0:
-            self.clicked = False
-
-        surface.blit(self.image, (self.rect.x, self.rect.y))
 
         return action
+
+    # def __init__(self, x, y, image, scale):
+
+    #     width = image.get_width()
+    #     height = image.get_height()
+    #     self.image = pygame.transform.scale(
+    #         image, (int(width * scale), int(height * scale))
+    #     )
+    #     self.rect = self.image.get_rect()
+    #     self.rect.topleft = (x, y)
+    #     self.clicked = False
+
+    # def draw(self, surface):
+    #     action = False
+
+        # pos = pygame.mouse.get_pos()
+
+        # if self.rect.collidepoint(pos):
+        #     if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
+        #         self.clicked = True
+        #         action = True
+
+        # if pygame.mouse.get_pressed()[0] == 0:
+        #     self.clicked = False
+
+        # surface.blit(self.image, (self.rect.x, self.rect.y))
+
+        # return action
 
     def update(self, new_text, new_position):
         self.image = pygame.font.SysFont("Arial", 48, bold=True).render(new_text, True, (0, 0, 0))
@@ -213,15 +271,29 @@ class Game:
         close = pygame.image.load("img/close.png").convert_alpha()
 
         # Setting the Button (x Position, y Postion, img, Scale)
-        pvpButton = Button(100, 250, pvp, 0.8)
-        pvcButton = Button(268.5, 250, pvc, 0.8)
-        onlineButton = Button(437, 250, online, 0.8)
-        playButton = Button(250, 250, play, 0.8)
-        quitButton = Button(250, 350, quit, 0.8)
-        backButton = Button(100, 100, back, 0.8)
-        closeButton = Button(550, 100, close, 0.8)
-        createButton = Button(250, 250, create, 0.8)
-        joinButton = Button(250, 320, join, 0.8)
+        # pvpButton = Button(100, 250, pvp, 0.8)
+        # pvcButton = Button(268.5, 250, pvc, 0.8)
+        # onlineButton = Button(437, 250, online, 0.8)
+        # playButton = Button(250, 250, play, 0.8)
+        # quitButton = Button(250, 350, quit, 0.8)
+        # backButton = Button(100, 100, back, 0.8)
+        # closeButton = Button(550, 100, close, 0.8)
+        # createButton = Button(250, 250, create, 0.8)
+        # joinButton = Button(250, 320, join, 0.8)
+
+        
+
+        # new Button Class
+        # (self, text, width, height, pos)
+        playButton = Button('Play', 200, 40, (250, 250), 5)
+        pvpButton = Button('PVP', 150, 100, (100, 250), 5)
+        pvcButton = Button('PVC', 150, 100, (275, 250), 5)
+        onlineButton = Button('Multi Player', 150, 100, (450, 250), 5)
+        quitButton = Button('Quit', 200, 40, (250, 350), 5)
+        backButton = Button('Back', 100, 40, (100, 100), 5)
+        closeButton = Button('Close', 100, 40, (500, 100), 5)
+        createButton = Button('Create', 200, 40, (250, 250), 5)
+        joinButton = Button('Join', 200, 40, (250, 320), 5)
 
         roomSelectionButtons = []
 
@@ -234,7 +306,8 @@ class Game:
             gid = room["room"]
             button_text = "Room " + str(gid)
             button_position = (x_position, y_position)
-            roomSelectionButton = Button(button_position[0], button_position[1], roomSelection, 0.8)
+            roomSelectionButton = Button(button_text, 200, 40, (button_position[0], button_position[1]), 5)
+            # roomSelectionButton = Button(button_position[0], button_position[1], roomSelection, 0.8)
             roomSelectionButton.update(button_text, button_position)
             roomSelectionButtons.append(roomSelectionButton)
 
