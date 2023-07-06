@@ -94,6 +94,11 @@ class Button:
 
         return action
 
+    def update(self, new_text, new_position):
+        self.image = pygame.font.SysFont("Arial", 48, bold=True).render(new_text, True, (0, 0, 0))
+        self.rect = self.image.get_rect()
+        self.rect.topleft = new_position
+
 
 class Game:
     gameMode = 0
@@ -217,7 +222,23 @@ class Game:
         closeButton = Button(550, 100, close, 0.8)
         createButton = Button(250, 250, create, 0.8)
         joinButton = Button(250, 320, join, 0.8)
-        roomSelectionButton = Button(250, 250, roomSelection, 0.8)
+
+        roomSelectionButtons = []
+
+        x_position = 260
+        y_position = 250
+
+        button_spacing = 80
+
+        for i, room in enumerate(json_data["game"]):
+            gid = room["room"]
+            button_text = "Room " + str(gid)
+            button_position = (x_position, y_position)
+            roomSelectionButton = Button(button_position[0], button_position[1], roomSelection, 0.8)
+            roomSelectionButton.update(button_text, button_position)
+            roomSelectionButtons.append(roomSelectionButton)
+
+            y_position += button_spacing
 
         # Screen State
         playScreen = False
@@ -417,13 +438,14 @@ class Game:
 
                         # TODO: Change the button text to room name and make the button position dynamic
 
-                        if roomSelectionButton.draw(self.screen):
-                            # group_id = json_data["game"][i]["room"]
-                            group_id = 0
-                            server.send((str(client_id) + ":" + str(group_id)).encode())
-                            roomSelection = True
-                            turns += 1
-                            self.screen.fill(BLACK)
+                        for roomSelectionButton in roomSelectionButtons:
+                            if roomSelectionButton.draw(self.screen):
+                                groupid = json_data["game"][i]["room"]
+                                server.send((str(client_id) + ":" + str(groupid)).encode())
+                                roomSelection = True
+                                turns += 1
+                                self.screen.fill(BLACK)
+
                         if backButton.draw(self.screen):
                             roomSet = False
                         if closeButton.draw(self.screen):
@@ -439,6 +461,7 @@ class Game:
                         # Display Game Mode Screen
                         pygame.time.wait(20)
                         self.screen.fill((253, 240, 213))
+                        pygame.event.wait(10)
                         if pvpButton.draw(self.screen):
                             Game.gameMode = 1
                             print("Masuk mode 1")
@@ -468,6 +491,7 @@ class Game:
                     self.screen.fill((253, 240, 213))
                     if playButton.draw(self.screen):
                         playScreen = True
+                        pygame.event.wait(10)
                     if quitButton.draw(self.screen):
                         running = False
                         server.close()
