@@ -123,34 +123,6 @@ class Button:
 
         return action
 
-    # def __init__(self, x, y, image, scale):
-
-    #     width = image.get_width()
-    #     height = image.get_height()
-    #     self.image = pygame.transform.scale(
-    #         image, (int(width * scale), int(height * scale))
-    #     )
-    #     self.rect = self.image.get_rect()
-    #     self.rect.topleft = (x, y)
-    #     self.clicked = False
-
-    # def draw(self, surface):
-    #     action = False
-
-        # pos = pygame.mouse.get_pos()
-
-        # if self.rect.collidepoint(pos):
-        #     if pygame.mouse.get_pressed()[0] == 1 and self.clicked == False:
-        #         self.clicked = True
-        #         action = True
-
-        # if pygame.mouse.get_pressed()[0] == 0:
-        #     self.clicked = False
-
-        # surface.blit(self.image, (self.rect.x, self.rect.y))
-
-        # return action
-
     def update(self, new_text, new_position):
         self.image = pygame.font.SysFont("Arial", 48, bold=True).render(new_text, True, (0, 0, 0))
         self.rect = self.image.get_rect()
@@ -274,19 +246,6 @@ class Game:
         back = pygame.image.load("img/back.png").convert_alpha()
         close = pygame.image.load("img/close.png").convert_alpha()
 
-        # Setting the Button (x Position, y Postion, img, Scale)
-        # pvpButton = Button(100, 250, pvp, 0.8)
-        # pvcButton = Button(268.5, 250, pvc, 0.8)
-        # onlineButton = Button(437, 250, online, 0.8)
-        # playButton = Button(250, 250, play, 0.8)
-        # quitButton = Button(250, 350, quit, 0.8)
-        # backButton = Button(100, 100, back, 0.8)
-        # closeButton = Button(550, 100, close, 0.8)
-        # createButton = Button(250, 250, create, 0.8)
-        # joinButton = Button(250, 320, join, 0.8)
-
-        
-
         # new Button Class
         # (self, text, width, height, pos)
         playButton = Button('Play', 200, 40, (250, 250), 5)
@@ -311,7 +270,6 @@ class Game:
             button_text = "Room " + str(gid)
             button_position = (x_position, y_position)
             roomSelectionButton = Button(button_text, 200, 40, (button_position[0], button_position[1]), 5)
-            # roomSelectionButton = Button(button_position[0], button_position[1], roomSelection, 0.8)
             roomSelectionButton.update(button_text, button_position)
             roomSelectionButtons.append(roomSelectionButton)
 
@@ -514,8 +472,6 @@ class Game:
                     ):
                         # Display Room Selection Screen
                         self.screen.blit(bgSize, (0,0))
-
-                        # TODO: Change the button text to room name and make the button position dynamic
 
                         for roomSelectionButton in roomSelectionButtons:
                             i = roomSelectionButtons.index(roomSelectionButton)
